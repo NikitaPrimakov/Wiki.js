@@ -1,0 +1,11 @@
+namespace: <namespace>
+replicas: <1 or 2>
+node_role: <role>
+node_tolerations: <tolerations>
+storage:
+  class_name: longhorn-hdd
+  size: 10Gi
+secrets:
+  wikijs_db_password: Y2hhbmdlX21l
+ingress:
+  web: <address>

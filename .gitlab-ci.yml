@@ -1,0 +1,37 @@
+stages:
+  - build
+
+variables:
+  SECRET_ROLE: <secret role vault>
+  SECRET_PATH: <secret path vault>
+
+docker-build:
+  stage: build
+  tags:
+    - k8s
+  image:
+    name: "docker/dind-builder:latest"
+    entrypoint: [""]
+  id_tokens:
+    VAULT_JWT_TOKEN:
+      aud: https://<адрес репозитория>
+  before_script:
+    - export VAULT_TOKEN="$(vault write -field=token <auth method> role=$SECRET_ROLE jwt=$VAULT_JWT_TOKEN)"
+    - echo "$(vault kv get -field=<password for registry> $SECRET_PATH/build)" > /kaniko/.docker/config.json
+  script:
+    - /kaniko/executor
+      --context "${CI_PROJECT_DIR}"
+      --dockerfile "${CI_PROJECT_DIR}/Dockerfile"
+      --destination "$IMAGE:$VERSION"
+      --destination "$IMAGE:$CI_COMMIT_REF_NAME"
+      --destination "$IMAGE:latest"
+      --ignore-path=/var/mail
+      --ignore-path=/var/spool/mail
+  variables:
+    VAULT_ADDR: https://<vault address>
+    VERSION: $MAJOR.$MINOR.$CI_PIPELINE_ID-$CI_COMMIT_REF_NAME
+  rules:
+    - if: '$CI_COMMIT_REF_PROTECTED == "true" && $CI_COMMIT_REF_NAME == "main"'
+      when: manual
+    - if: '$CI_COMMIT_REF_PROTECTED == "true"'
+      when: manual

@@ -1,0 +1,61 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: wikijs
+  namespace: {{.Values.namespace}}
+spec:
+  selector:
+    matchLabels:
+      app: wikijs
+  replicas: {{.Values.replicas}}
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        app: wikijs
+    spec:
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: node-role.kubernetes.io/{{ .Values.node_role }}
+                operator: Exists
+      tolerations:
+        - key: {{ .Values.node_tolerations }}
+          operator: "Exists"
+          effect: "NoSchedule"
+      containers:
+        - name: wikijs
+          image: requarks/wiki:latest
+          resources:
+            requests:
+              memory: 1024Mi
+            limits:
+              memory: 1024Mi
+          ports:
+            - containerPort: 3000
+          env:
+            - name: DB_TYPE
+              value: "postgres"
+            - name: DB_HOST
+              value: "your-database-host"
+            - name: DB_PORT
+              value: "5432"
+            - name: DB_USER
+              value: postgres
+            - name: DB_PASS
+              valueFrom:
+                secretKeyRef:
+                  name: secret
+                  key: wikijs_db_password
+            - name: DB_NAME
+              value: "your-database-name"
+          volumeMounts:
+            - name: wikijs-storage
+              mountPath: /wiki
+      volumes:
+        - name: wikijs-storage
+          persistentVolumeClaim:
+            claimName: wikijs-pvc

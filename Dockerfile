@@ -1,0 +1,1 @@
+FROM requarks/wiki:canary
