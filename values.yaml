@@ -1,0 +1,8 @@
+namespace: psql
+replicas: 1
+storage:
+  size: 1Gi
+  class_name: longhorn-hdd
+secrets:
+  wikijs_db_password: eW91cl9wYXNzd29yZA==
+  

@@ -15,32 +15,26 @@ spec:
       labels:
         app: wikijs
     spec:
-      affinity:
-        nodeAffinity:
-          requiredDuringSchedulingIgnoredDuringExecution:
-            nodeSelectorTerms:
-            - matchExpressions:
-              - key: node-role.kubernetes.io/{{ .Values.node_role }}
-                operator: Exists
-      tolerations:
-        - key: {{ .Values.node_tolerations }}
-          operator: "Exists"
-          effect: "NoSchedule"
+      initContainers:
+      - name: volume-permissions
+        image: busybox
+        command: ["sh", "-c", "chown -R 1000:1000 /wiki/data"]
+        volumeMounts:
+        - name: wikijs-pvc
+          mountPath: /wiki/data
       containers:
         - name: wikijs
           image: requarks/wiki:latest
-          resources:
-            requests:
-              memory: 1024Mi
-            limits:
-              memory: 1024Mi
+          workingDir: /wiki
           ports:
-            - containerPort: 3000
+            - name: wikijs-web
+              protocol: TCP
+              containerPort: 3000
           env:
             - name: DB_TYPE
               value: "postgres"
             - name: DB_HOST
-              value: "your-database-host"
+              value: "postgresql"
             - name: DB_PORT
               value: "5432"
             - name: DB_USER
@@ -51,11 +45,11 @@ spec:
                   name: secret
                   key: wikijs_db_password
             - name: DB_NAME
-              value: "your-database-name"
+              value: "postgres"
           volumeMounts:
-            - name: wikijs-storage
-              mountPath: /wiki
+            - name: wikijs-pvc
+              mountPath: "/wiki/data"
       volumes:
-        - name: wikijs-storage
+        - name: wikijs-pvc
           persistentVolumeClaim:
             claimName: wikijs-pvc

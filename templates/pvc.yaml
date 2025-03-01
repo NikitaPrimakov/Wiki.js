@@ -1,0 +1,14 @@
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: wikijs-pvc
+  namespace: psql
+spec:
+  resources:
+    requests:
+      storage: {{ .Values.storage.size }}
+  volumeMode: Filesystem
+  volumeName: wikijs-pv
+  storageClassName: {{ .Values.storage.class_name }}
+  accessModes:
+    - ReadWriteOnce
